@@ -1,0 +1,59 @@
+app waspEmbeddings {
+  wasp: {
+    version: "^0.13.0"
+  },
+  title: "wasp-embeddings",
+  db: { 
+    system: PostgreSQL,
+    seeds: [
+      import { embedSeedScript } from "@src/seeds/seedEmbeddings",
+    ]
+  },
+}
+
+entity TextChunk {=psl
+  id              Int         @id @default(autoincrement())
+  title           String
+  content         String
+  tokenAmount     Int
+  parentFile      ParentFile? @relation(fields: [parentFileTitle], references: [title])
+  parentFileTitle String?
+psl=}
+
+entity ParentFile {=psl
+  id              Int         @id @default(autoincrement())
+  title           String      @unique
+  textChunks      TextChunk[]
+  isComplete      Boolean     @default(false)
+  dateEmbedded    DateTime    @default(now())
+psl=}
+
+route RootRoute { path: "/", to: MainPage }
+page MainPage {
+  component: import Main from "@src/MainPage"
+}
+
+route ParentFileRoute { path: "/parentfile/:id", to: ParentFilePage }
+page ParentFilePage {
+  component: import ParentFile from "@src/ParentFilePage"
+}
+
+action generateEmbeddings {
+  fn: import { generateEmbeddings } from "@src/embeddings/generateEmbeddings",
+  entities: [TextChunk, ParentFile]
+}
+
+query getEmbeddedFilenames {
+  fn: import { getEmbeddedFilenames } from "@src/embeddings/getEmbeddedFiles",
+  entities: [ParentFile]
+}
+
+query searchEmbeddings {
+  fn: import { searchEmbeddings } from "@src/embeddings/searchEmbeddings",
+  entities: [TextChunk]
+}
+
+query getEmbeddedTextChunk {
+  fn: import { getEmbeddedTextChunk } from "@src/embeddings/getEmbeddedFiles",
+  entities: [TextChunk, ParentFile]
+}
